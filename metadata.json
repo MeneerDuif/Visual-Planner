@@ -1,0 +1,5 @@
+{
+  "name": "Visual Planner",
+  "description": "A scrollable, zoomable interactive timeline for general project and life planning.",
+  "requestFramePermissions": []
+}
