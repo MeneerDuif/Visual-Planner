@@ -59,8 +59,9 @@
 
             <!-- Controls -->
             <div class="flex items-center space-x-3">
-                <button onclick="app.scrollToToday()" class="text-sm font-medium text-slate-600 hover:text-indigo-600 transition-colors">
-                    Today
+                <button onclick="app.scrollToToday()" class="flex items-center space-x-1 bg-indigo-50 text-indigo-700 px-3 py-2 rounded-lg hover:bg-indigo-100 transition-colors text-sm font-medium border border-indigo-100">
+                    <i data-lucide="calendar-check" width="16"></i>
+                    <span>Jump to Today</span>
                 </button>
 
                 <button onclick="app.openEditor(null, 'marker')" class="flex items-center space-x-1 bg-white border border-slate-300 text-slate-600 px-3 py-2 rounded-lg hover:bg-slate-50 hover:text-slate-900 transition-all text-sm font-medium">
@@ -134,6 +135,7 @@
             
             <form id="editor-form" class="p-6 space-y-4 overflow-y-auto">
                 <input type="hidden" id="edit-id">
+                <input type="hidden" id="edit-series-id">
                 
                 <div class="flex p-1 bg-slate-100 rounded-lg mb-4">
                     <button type="button" onclick="app.setEditorType('standard')" id="type-standard" class="flex-1 py-2 text-sm font-medium rounded-md transition-all flex justify-center items-center">
@@ -182,17 +184,59 @@
                     <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
                     <textarea id="edit-desc" rows="3" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none resize-none"></textarea>
                 </div>
+                
+                <!-- Recurrence Options -->
+                <div id="recurrence-section" class="border-t border-slate-100 pt-3 mt-2">
+                    <div class="flex items-center justify-between mb-2">
+                        <label class="text-sm font-medium text-gray-700 flex items-center gap-2">
+                            <i data-lucide="repeat" width="14"></i> Recurrence
+                        </label>
+                        <div class="flex items-center">
+                            <input type="checkbox" id="edit-repeat" onchange="app.toggleRepeatFields()" class="w-4 h-4 text-indigo-600 rounded">
+                            <span class="ml-2 text-sm text-gray-600">Repeat event</span>
+                        </div>
+                    </div>
+                    
+                    <div id="repeat-options" class="hidden space-y-3 bg-slate-50 p-3 rounded-lg border border-slate-200">
+                        <div class="flex space-x-2">
+                            <div class="flex-1">
+                                <label class="text-xs text-gray-500 block mb-1">Frequency</label>
+                                <select id="edit-repeat-freq" class="w-full text-sm border rounded px-2 py-1.5 outline-none">
+                                    <option value="daily">Daily</option>
+                                    <option value="weekly" selected>Weekly</option>
+                                    <option value="monthly">Monthly</option>
+                                    <option value="yearly">Yearly</option>
+                                </select>
+                            </div>
+                            <div class="w-20">
+                                <label class="text-xs text-gray-500 block mb-1">Every</label>
+                                <div class="flex items-center">
+                                    <input type="number" id="edit-repeat-interval" value="1" min="1" class="w-full text-sm border rounded px-2 py-1.5 text-center outline-none">
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="text-xs text-gray-500 block mb-1">Until Date (Required)</label>
+                            <input type="date" id="edit-repeat-until" class="w-full text-sm border rounded px-2 py-1.5 outline-none">
+                        </div>
+                    </div>
+                </div>
 
                 <div id="completed-check-wrapper" class="flex items-center space-x-2 pt-2">
                     <input type="checkbox" id="edit-completed" class="w-4 h-4 text-blue-600 rounded">
                     <label for="edit-completed" class="text-sm font-medium text-gray-700">Mark as Completed</label>
                 </div>
 
-                <div class="flex justify-between pt-2 mt-4 border-t border-gray-100 flex-shrink-0">
-                    <button type="button" id="btn-delete" onclick="app.deleteCurrentEvent()" class="px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg flex items-center text-sm font-medium">
-                        <i data-lucide="trash-2" width="16" class="mr-2"></i> Delete
-                    </button>
-                    <button type="submit" class="px-6 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800 flex items-center text-sm font-medium shadow-lg">
+                <div class="flex justify-between pt-2 mt-4 border-t border-gray-100 flex-shrink-0 gap-2">
+                    <div class="flex gap-2">
+                        <button type="button" id="btn-delete" onclick="app.deleteCurrentEvent()" class="px-3 py-2 text-red-600 hover:bg-red-50 rounded-lg flex items-center text-sm font-medium border border-transparent hover:border-red-100 transition-all">
+                            <i data-lucide="trash-2" width="16" class="mr-2"></i> Delete
+                        </button>
+                        <button type="button" id="btn-delete-series" onclick="app.deleteSeries()" class="hidden px-3 py-2 text-red-600 hover:bg-red-50 rounded-lg flex items-center text-sm font-medium border border-transparent hover:border-red-100 transition-all whitespace-nowrap">
+                            <i data-lucide="layers" width="16" class="mr-2"></i> Delete Series
+                        </button>
+                    </div>
+                    <button type="submit" class="px-6 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800 flex items-center text-sm font-medium shadow-lg ml-auto">
                         <i data-lucide="save" width="16" class="mr-2"></i> Save
                     </button>
                 </div>
@@ -230,10 +274,10 @@
         const ICONS = [
             'star', 'heart', 'flag', 'alert', 'gift', 'calendar', 'zap', 'check', 'clock', 'briefcase', 'user',
             'lightbulb', 'target', 'mountain', 'plane', 'book', 'coffee', 'music', 'camera', 'home', 'smile', 
-            'code', 'dollar-sign', 'dumbbell', 'utensils', 'shopping-cart'
+            'code', 'dollar-sign', 'dumbbell', 'utensils', 'shopping-cart', 'repeat'
         ];
         const VIEW_START = new Date('2025-01-01');
-        const VIEW_END = new Date('2030-12-31');
+        const VIEW_END = new Date('2045-12-31');
 
         // --- STATE ---
         const state = {
@@ -370,7 +414,7 @@
 
             scrollToToday: () => {
                 if(!app.timeScale) return;
-                const today = new Date();
+                let today = new Date();
                 // Clamp to view
                 if (today < VIEW_START) today = VIEW_START;
                 if (today > VIEW_END) today = VIEW_END;
@@ -533,12 +577,21 @@
                     </button>
                 `).join('');
                 lucide.createIcons();
+                
+                // Reset Recurrence UI
+                document.getElementById('edit-repeat').checked = false;
+                app.toggleRepeatFields();
+                
+                // Reset/Hide Delete Series button
+                const btnDeleteSeries = document.getElementById('btn-delete-series');
+                btnDeleteSeries.classList.add('hidden');
 
                 if (id) {
                     const ev = state.events.find(e => e.id === id);
                     if (!ev) return;
                     document.getElementById('editor-title').textContent = 'Edit Item';
                     document.getElementById('edit-id').value = ev.id;
+                    document.getElementById('edit-series-id').value = ev.seriesId || '';
                     document.getElementById('edit-title').value = ev.title;
                     document.getElementById('edit-date').value = ev.date;
                     document.getElementById('edit-category').value = ev.category;
@@ -549,9 +602,20 @@
                     state.currentEditorType = ev.type || 'standard';
                     app.selectIcon(ev.icon || 'star');
                     app.updateEditorTypeUI();
+
+                    // If existing event, hide recurrence creation to avoid complexity for now, or maybe disable it
+                    // For simplicity in this version, we hide recurrence creation when editing. 
+                    // To extend a series, user should create new.
+                    document.getElementById('recurrence-section').style.display = 'none';
+
+                    if (ev.seriesId) {
+                         btnDeleteSeries.classList.remove('hidden');
+                    }
+
                 } else {
                     document.getElementById('editor-title').textContent = 'Add New Item';
                     document.getElementById('edit-id').value = '';
+                    document.getElementById('edit-series-id').value = '';
                     document.getElementById('edit-title').value = '';
                     document.getElementById('edit-date').value = dateOverride || app.formatDateForInput(new Date());
                     document.getElementById('edit-category').value = type === 'marker' ? 'MILESTONE' : 'TASK';
@@ -559,6 +623,10 @@
                     document.getElementById('edit-desc').value = '';
                     document.getElementById('edit-completed').checked = false;
                     document.getElementById('btn-delete').style.visibility = 'hidden';
+                    
+                    // Show recurrence for new items
+                    document.getElementById('recurrence-section').style.display = 'block';
+                    
                     app.selectIcon('star');
                 }
 
@@ -593,6 +661,18 @@
                 document.getElementById('completed-check-wrapper').style.display = isMarker ? 'none' : 'flex';
             },
 
+            toggleRepeatFields: () => {
+                const isRepeat = document.getElementById('edit-repeat').checked;
+                const options = document.getElementById('repeat-options');
+                if (isRepeat) {
+                    options.classList.remove('hidden');
+                    document.getElementById('edit-repeat-until').required = true;
+                } else {
+                    options.classList.add('hidden');
+                    document.getElementById('edit-repeat-until').required = false;
+                }
+            },
+
             selectIcon: (iconName) => {
                 document.querySelectorAll('.icon-btn').forEach(btn => {
                     if (btn.dataset.icon === iconName) {
@@ -620,23 +700,65 @@
                 const desc = document.getElementById('edit-desc').value;
                 const isCompleted = document.getElementById('edit-completed').checked;
                 const icon = document.getElementById('editor-form').dataset.selectedIcon || 'star';
+                
+                // Recurrence
+                const isRepeat = document.getElementById('edit-repeat').checked;
 
-                const event = {
-                    id: id || crypto.randomUUID(),
+                const baseEvent = {
                     title,
-                    date,
+                    description: desc,
                     category,
                     color,
-                    description: desc,
                     isCompleted,
                     type: state.currentEditorType,
-                    icon
+                    icon,
+                    seriesId: document.getElementById('edit-series-id').value || (isRepeat ? crypto.randomUUID() : null)
                 };
 
                 if (id) {
-                    state.events = state.events.map(ev => ev.id === id ? event : ev);
+                    // Update existing single event
+                    state.events = state.events.map(ev => ev.id === id ? { ...baseEvent, id: id, date: date } : ev);
                 } else {
-                    state.events.push(event);
+                    // Create New
+                    if (isRepeat) {
+                        const freq = document.getElementById('edit-repeat-freq').value;
+                        const interval = parseInt(document.getElementById('edit-repeat-interval').value) || 1;
+                        const untilStr = document.getElementById('edit-repeat-until').value;
+                        
+                        if (!untilStr) {
+                            alert("Please select an 'Until' date for repeating events.");
+                            return;
+                        }
+
+                        const untilDate = new Date(untilStr);
+                        let currDate = new Date(date);
+                        const newEvents = [];
+
+                        while(currDate <= untilDate) {
+                            newEvents.push({
+                                ...baseEvent,
+                                id: crypto.randomUUID(),
+                                date: app.formatDateForInput(currDate)
+                            });
+
+                            // Increment
+                            if (freq === 'daily') currDate.setDate(currDate.getDate() + interval);
+                            else if (freq === 'weekly') currDate.setDate(currDate.getDate() + (7 * interval));
+                            else if (freq === 'monthly') currDate.setMonth(currDate.getMonth() + interval);
+                            else if (freq === 'yearly') currDate.setFullYear(currDate.getFullYear() + interval);
+                        }
+                        
+                        state.events = [...state.events, ...newEvents];
+                        alert(`Created ${newEvents.length} repeating events.`);
+
+                    } else {
+                        // Single New Event
+                        state.events.push({
+                            ...baseEvent,
+                            id: crypto.randomUUID(),
+                            date: date
+                        });
+                    }
                 }
 
                 app.saveData();
@@ -648,6 +770,16 @@
                 const id = document.getElementById('edit-id').value;
                 if (id) {
                     state.events = state.events.filter(e => e.id !== id);
+                    app.saveData();
+                    app.renderTimeline();
+                    app.closeEditor();
+                }
+            },
+
+            deleteSeries: () => {
+                const seriesId = document.getElementById('edit-series-id').value;
+                if (seriesId && confirm("Are you sure you want to delete ALL events in this series?")) {
+                    state.events = state.events.filter(e => e.seriesId !== seriesId);
                     app.saveData();
                     app.renderTimeline();
                     app.closeEditor();
